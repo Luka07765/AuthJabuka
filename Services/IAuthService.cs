@@ -4,9 +4,9 @@ using System.Threading.Tasks;
 
 namespace Jade.Services
 {
-    public interface IAuthService
+    public interface IUserService
     {
         Task<IdentityResult> RegisterUser(RegisterModel model);
-        Task<SignInResult> LoginUser(LoginModel model);
+        Task<IdentityUser> AuthenticateUser(LoginModel model);
     }
 }

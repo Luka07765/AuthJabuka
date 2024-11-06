@@ -113,3 +113,12 @@ C:\Users\lukat\source\repos\Jade\obj\Debug\net8.0\refint\Jade.dll
 C:\Users\lukat\source\repos\Jade\obj\Debug\net8.0\Jade.pdb
 C:\Users\lukat\source\repos\Jade\obj\Debug\net8.0\Jade.genruntimeconfig.cache
 C:\Users\lukat\source\repos\Jade\obj\Debug\net8.0\ref\Jade.dll
+C:\Users\lukat\source\repos\Jade\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+C:\Users\lukat\source\repos\Jade\bin\Debug\net8.0\Microsoft.IdentityModel.Abstractions.dll
+C:\Users\lukat\source\repos\Jade\bin\Debug\net8.0\Microsoft.IdentityModel.JsonWebTokens.dll
+C:\Users\lukat\source\repos\Jade\bin\Debug\net8.0\Microsoft.IdentityModel.Logging.dll
+C:\Users\lukat\source\repos\Jade\bin\Debug\net8.0\Microsoft.IdentityModel.Protocols.dll
+C:\Users\lukat\source\repos\Jade\bin\Debug\net8.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+C:\Users\lukat\source\repos\Jade\bin\Debug\net8.0\Microsoft.IdentityModel.Tokens.dll
+C:\Users\lukat\source\repos\Jade\bin\Debug\net8.0\System.IdentityModel.Tokens.Jwt.dll
+C:\Users\lukat\source\repos\Jade\obj\Debug\net8.0\Jade.sourcelink.json

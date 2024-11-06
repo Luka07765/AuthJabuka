@@ -8,11 +8,13 @@ namespace AuthDemo.Controllers
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly IAuthService _authService;
+        private readonly ITokenService _tokenService;
+        private readonly IUserService _userService;
 
-        public AuthController(IAuthService authService)
+        public AuthController(ITokenService tokenService, IUserService userService)
         {
-            _authService = authService;
+            _tokenService = tokenService;
+            _userService = userService;
         }
 
         [HttpPost("Register")]
@@ -21,8 +23,7 @@ namespace AuthDemo.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var result = await _authService.RegisterUser(model);
-
+            var result = await _userService.RegisterUser(model);
             if (result.Succeeded)
                 return Ok("User registered successfully!");
 
@@ -40,12 +41,13 @@ namespace AuthDemo.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var result = await _authService.LoginUser(model);
+            var user = await _userService.AuthenticateUser(model);
+            if (user == null)
+                return Unauthorized("Invalid login attempt.");
 
-            if (result.Succeeded)
-                return Ok("User logged in successfully!");
+            var token = await _tokenService.CreateToken(user);
 
-            return Unauthorized("Invalid login attempt.");
+            return Ok(new { Token = token });
         }
     }
 }
