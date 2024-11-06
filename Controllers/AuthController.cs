@@ -6,7 +6,7 @@ using Jade.DTO;
 using Jade.Services;
 using Jade.Models;
 
-namespace Jade.Controllers // Adjusted to match your project's namespace
+namespace Jade.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
@@ -54,8 +54,9 @@ namespace Jade.Controllers // Adjusted to match your project's namespace
             if (user == null)
                 return Unauthorized("Invalid login attempt.");
 
-            // Generate access token and refresh token
-            var tokenResponse = await _tokenService.CreateTokenResponse(user);
+            var ipAddress = GetIpAddress();
+
+            var tokenResponse = await _tokenService.CreateTokenResponse(user, ipAddress);
 
             return Ok(tokenResponse);
         }
@@ -63,40 +64,50 @@ namespace Jade.Controllers // Adjusted to match your project's namespace
         [HttpPost("RefreshToken")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest model)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            var ipAddress = GetIpAddress();
 
             var existingToken = await _refreshTokenService.GetRefreshToken(model.RefreshToken);
 
-            if (existingToken == null || existingToken.IsExpired)
+            if (existingToken == null || !existingToken.IsActive)
                 return Unauthorized("Invalid or expired refresh token.");
 
+            // Generate new refresh token and invalidate the old one
             var user = existingToken.User;
+            var newRefreshToken = await _refreshTokenService.GenerateRefreshToken(user.Id, ipAddress);
 
-            // Optionally, check if the user is still active
+            await _refreshTokenService.InvalidateRefreshToken(existingToken, ipAddress, newRefreshToken.Token);
 
-            var newTokenResponse = await _tokenService.CreateTokenResponse(user);
+            // Generate new access token
+            var newAccessToken = await _tokenService.CreateAccessToken(user);
 
-            // Invalidate the old refresh token
-            await _refreshTokenService.InvalidateRefreshToken(existingToken);
+            var tokenResponse = new TokenResponse
+            {
+                AccessToken = newAccessToken,
+                RefreshToken = newRefreshToken.Token
+            };
 
-            return Ok(newTokenResponse);
+            return Ok(tokenResponse);
         }
 
         [Authorize]
         [HttpPost("Logout")]
-        public async Task<IActionResult> Logout([FromBody] LogoutRequest model)
+        public async Task<IActionResult> Logout()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var refreshToken = await _refreshTokenService.GetRefreshToken(model.RefreshToken);
+            var ipAddress = GetIpAddress();
 
-            if (refreshToken != null && refreshToken.UserId == userId)
-            {
-                await _refreshTokenService.InvalidateRefreshToken(refreshToken);
-                return Ok("Logged out successfully.");
-            }
+            await _refreshTokenService.InvalidateAllUserRefreshTokens(userId, ipAddress);
 
-            return BadRequest("Invalid refresh token.");
+            return Ok("Logged out successfully.");
+        }
+
+        // Helper method to get IP address
+        private string GetIpAddress()
+        {
+            if (Request.Headers.ContainsKey("X-Forwarded-For"))
+                return Request.Headers["X-Forwarded-For"];
+            else
+                return HttpContext.Connection.RemoteIpAddress.MapToIPv4().ToString();
         }
     }
 }

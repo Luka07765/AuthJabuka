@@ -24,7 +24,6 @@ namespace Jade.Services
             {
                 new Claim(ClaimTypes.Name, user.UserName),
                 new Claim(ClaimTypes.NameIdentifier, user.Id),
-                // Add more claims if needed
             };
 
             var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
@@ -32,18 +31,18 @@ namespace Jade.Services
             var token = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
-                expires: DateTime.UtcNow.AddMinutes(15), // Short-lived access token
+                expires: DateTime.UtcNow.AddMinutes(15), // Access token expiration
                 claims: authClaims,
                 signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
-                );
+            );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        public async Task<TokenResponse> CreateTokenResponse(IdentityUser user)
+        public async Task<TokenResponse> CreateTokenResponse(IdentityUser user, string ipAddress)
         {
             var accessToken = await CreateAccessToken(user);
-            var refreshToken = await _refreshTokenService.GenerateRefreshToken(user.Id);
+            var refreshToken = await _refreshTokenService.GenerateRefreshToken(user.Id, ipAddress);
 
             return new TokenResponse
             {

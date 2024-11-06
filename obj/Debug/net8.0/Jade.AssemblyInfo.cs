@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Jade")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0fa4cd708ee3381a4c7dc9ae263b97af70130b97")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+332b35a70a9b73295bc3355fc0d37b5f322931ab")]
 [assembly: System.Reflection.AssemblyProductAttribute("Jade")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Jade")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

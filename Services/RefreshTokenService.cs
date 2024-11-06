@@ -14,13 +14,14 @@ namespace Jade.Services
             _context = context;
         }
 
-        public async Task<RefreshToken> GenerateRefreshToken(string userId)
+        public async Task<RefreshToken> GenerateRefreshToken(string userId, string ipAddress)
         {
             var refreshToken = new RefreshToken
             {
                 Token = GenerateTokenString(),
                 Expires = DateTime.UtcNow.AddDays(7),
                 Created = DateTime.UtcNow,
+                CreatedByIp = ipAddress,
                 UserId = userId
             };
 
@@ -36,10 +37,29 @@ namespace Jade.Services
                 .SingleOrDefaultAsync(rt => rt.Token == token);
         }
 
-        public async Task InvalidateRefreshToken(RefreshToken token)
+        public async Task InvalidateRefreshToken(RefreshToken token, string ipAddress, string replacedByToken = null)
         {
-            _context.RefreshTokens.Remove(token);
+            token.Revoked = DateTime.UtcNow;
+            token.RevokedByIp = ipAddress;
+            token.ReplacedByToken = replacedByToken;
+
+            _context.RefreshTokens.Update(token);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task InvalidateAllUserRefreshTokens(string userId, string ipAddress)
+        {
+            // Fetch tokens based on UserId, then move filtering to client-side with AsEnumerable
+            var tokens = _context.RefreshTokens
+                .Where(rt => rt.UserId == userId)
+                .AsEnumerable() // Switch to client-side evaluation
+                .Where(rt => rt.IsActive) // Apply IsActive filter in memory
+                .ToList();
+
+            foreach (var token in tokens)
+            {
+                await InvalidateRefreshToken(token, ipAddress);
+            }
         }
 
         private string GenerateTokenString()
