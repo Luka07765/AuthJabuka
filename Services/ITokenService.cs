@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Identity;
-
+using Jade.Models;
 namespace Jade.Services
 {
     public interface ITokenService
     {
-        Task<string> CreateToken(IdentityUser user);
+        Task<string> CreateAccessToken(IdentityUser user);
+        Task<TokenResponse> CreateTokenResponse(IdentityUser user);
     }
 }

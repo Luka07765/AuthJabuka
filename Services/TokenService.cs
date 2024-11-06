@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Jade.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -9,18 +10,21 @@ namespace Jade.Services
     public class TokenService : ITokenService
     {
         private readonly IConfiguration _configuration;
+        private readonly IRefreshTokenService _refreshTokenService;
 
-        public TokenService(IConfiguration configuration)
+        public TokenService(IConfiguration configuration, IRefreshTokenService refreshTokenService)
         {
             _configuration = configuration;
+            _refreshTokenService = refreshTokenService;
         }
 
-        public async Task<string> CreateToken(IdentityUser user)
+        public async Task<string> CreateAccessToken(IdentityUser user)
         {
             var authClaims = new[]
             {
                 new Claim(ClaimTypes.Name, user.UserName),
-                // You can add more claims if needed
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                // Add more claims if needed
             };
 
             var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
@@ -28,12 +32,24 @@ namespace Jade.Services
             var token = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
-                expires: DateTime.UtcNow.AddHours(3),
+                expires: DateTime.UtcNow.AddMinutes(15), // Short-lived access token
                 claims: authClaims,
                 signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
                 );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        public async Task<TokenResponse> CreateTokenResponse(IdentityUser user)
+        {
+            var accessToken = await CreateAccessToken(user);
+            var refreshToken = await _refreshTokenService.GenerateRefreshToken(user.Id);
+
+            return new TokenResponse
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken.Token
+            };
         }
     }
 }

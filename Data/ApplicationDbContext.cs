@@ -1,4 +1,5 @@
 ﻿
+using Jade.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,5 +11,6 @@ namespace Jade.Data
             : base(options)
         {
         }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
     }
 }

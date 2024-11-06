@@ -12,7 +12,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Register services
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
- // Add this if using IAuthService
+builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+
+// Add this if using IAuthService
 
 // Add Database Context with MySQL
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -50,7 +52,8 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidAudience = builder.Configuration["Jwt:Audience"],
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
+        ClockSkew = TimeSpan.Zero
     };
 });
 

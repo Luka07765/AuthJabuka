@@ -1,8 +1,12 @@
-﻿using Jade.DTO;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using Jade.DTO;
 using Jade.Services;
+using Jade.Models;
 
-namespace AuthDemo.Controllers
+namespace Jade.Controllers // Adjusted to match your project's namespace
 {
     [ApiController]
     [Route("api/[controller]")]
@@ -10,11 +14,16 @@ namespace AuthDemo.Controllers
     {
         private readonly ITokenService _tokenService;
         private readonly IUserService _userService;
+        private readonly IRefreshTokenService _refreshTokenService;
 
-        public AuthController(ITokenService tokenService, IUserService userService)
+        public AuthController(
+            ITokenService tokenService,
+            IUserService userService,
+            IRefreshTokenService refreshTokenService)
         {
             _tokenService = tokenService;
             _userService = userService;
+            _refreshTokenService = refreshTokenService;
         }
 
         [HttpPost("Register")]
@@ -45,9 +54,49 @@ namespace AuthDemo.Controllers
             if (user == null)
                 return Unauthorized("Invalid login attempt.");
 
-            var token = await _tokenService.CreateToken(user);
+            // Generate access token and refresh token
+            var tokenResponse = await _tokenService.CreateTokenResponse(user);
 
-            return Ok(new { Token = token });
+            return Ok(tokenResponse);
+        }
+
+        [HttpPost("RefreshToken")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest model)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var existingToken = await _refreshTokenService.GetRefreshToken(model.RefreshToken);
+
+            if (existingToken == null || existingToken.IsExpired)
+                return Unauthorized("Invalid or expired refresh token.");
+
+            var user = existingToken.User;
+
+            // Optionally, check if the user is still active
+
+            var newTokenResponse = await _tokenService.CreateTokenResponse(user);
+
+            // Invalidate the old refresh token
+            await _refreshTokenService.InvalidateRefreshToken(existingToken);
+
+            return Ok(newTokenResponse);
+        }
+
+        [Authorize]
+        [HttpPost("Logout")]
+        public async Task<IActionResult> Logout([FromBody] LogoutRequest model)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var refreshToken = await _refreshTokenService.GetRefreshToken(model.RefreshToken);
+
+            if (refreshToken != null && refreshToken.UserId == userId)
+            {
+                await _refreshTokenService.InvalidateRefreshToken(refreshToken);
+                return Ok("Logged out successfully.");
+            }
+
+            return BadRequest("Invalid refresh token.");
         }
     }
 }
