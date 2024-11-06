@@ -14,10 +14,21 @@ namespace Jade.Data
         }
 
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<Post> Posts { get; set; } // Add Posts DbSet
+        public DbSet<Like> Likes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<Post>()
+                .HasMany(p => p.Likes)
+                .WithOne(l => l.Post)
+                .HasForeignKey(l => l.PostId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Like>()
+                .HasIndex(l => new { l.PostId, l.UserId })
+                .IsUnique(); // Prevent a user from liking the same post multiple times
 
             // Ignore IsActive property to prevent mapping to database
             modelBuilder.Entity<RefreshToken>()
