@@ -19,6 +19,7 @@ namespace Jade.Controllers
         }
 
         // POST: api/Likes/Like/5
+        [Authorize(Roles = "User")]
         [HttpPost("Like/{postId}")]
         public async Task<IActionResult> LikePost(int postId)
         {
@@ -31,6 +32,7 @@ namespace Jade.Controllers
         }
 
         // POST: api/Likes/Unlike/5
+        [Authorize(Roles = "User")]
         [HttpPost("Unlike/{postId}")]
         public async Task<IActionResult> UnlikePost(int postId)
         {

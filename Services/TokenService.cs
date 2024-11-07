@@ -1,5 +1,6 @@
 ﻿using Jade.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -11,20 +12,31 @@ namespace Jade.Services
     {
         private readonly IConfiguration _configuration;
         private readonly IRefreshTokenService _refreshTokenService;
+        private readonly UserManager<IdentityUser> _userManager;
 
-        public TokenService(IConfiguration configuration, IRefreshTokenService refreshTokenService)
+        public TokenService(IConfiguration configuration, IRefreshTokenService refreshTokenService, UserManager<IdentityUser> userManager)
         {
             _configuration = configuration;
             _refreshTokenService = refreshTokenService;
+            _userManager = userManager;
         }
 
         public async Task<string> CreateAccessToken(IdentityUser user)
         {
-            var authClaims = new[]
+            // Initialize authClaims as a List to allow dynamic additions
+            var authClaims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, user.UserName),
                 new Claim(ClaimTypes.NameIdentifier, user.Id),
             };
+
+            var userRoles = await _userManager.GetRolesAsync(user);
+
+            // Add each role as a claim
+            foreach (var role in userRoles)
+            {
+                authClaims.Add(new Claim(ClaimTypes.Role, role));
+            }
 
             var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
 

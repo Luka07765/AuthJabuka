@@ -8,5 +8,6 @@ namespace Jade.Services
     {
         Task<IdentityResult> RegisterUser(RegisterModel model);
         Task<IdentityUser> AuthenticateUser(LoginModel model);
+        Task<bool> AssignRoleToUserAsync(string username, string roleName);
     }
 }

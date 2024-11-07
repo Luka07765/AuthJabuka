@@ -21,6 +21,7 @@ namespace Jade.Controllers
         }
 
         // GET: api/UserPosts
+        [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<PostDto>>> GetUserPosts()
         {
@@ -30,6 +31,7 @@ namespace Jade.Controllers
         }
 
         // POST: api/UserPosts
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<ActionResult<PostDto>> CreatePost([FromBody] CreatePostDto createPostDto)
         {
@@ -39,6 +41,7 @@ namespace Jade.Controllers
         }
 
         // DELETE: api/UserPosts/5
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePost(int id)
         {

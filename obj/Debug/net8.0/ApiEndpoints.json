@@ -1,5 +1,21 @@
 [
   {
+    "ContainingType": "Jade.Controllers.AdminController",
+    "Method": "AssignRoleToUser",
+    "RelativePath": "api/Admin/AssignRole",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Jade.DTO.AssignRoleDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Jade.Controllers.AuthController",
     "Method": "Login",
     "RelativePath": "api/Auth/Login",

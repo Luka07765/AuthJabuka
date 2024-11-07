@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Jade.DTO;
 using Jade.Services;
 using Jade.Models;
+using Microsoft.AspNetCore.Identity;
 
 namespace Jade.Controllers
 {
@@ -15,15 +16,18 @@ namespace Jade.Controllers
         private readonly ITokenService _tokenService;
         private readonly IUserService _userService;
         private readonly IRefreshTokenService _refreshTokenService;
+        private readonly UserManager<IdentityUser> _userManager;
 
         public AuthController(
             ITokenService tokenService,
             IUserService userService,
-            IRefreshTokenService refreshTokenService)
+            IRefreshTokenService refreshTokenService,
+            UserManager<IdentityUser> userManager)
         {
             _tokenService = tokenService;
             _userService = userService;
             _refreshTokenService = refreshTokenService;
+            _userManager = userManager;
         }
 
         [HttpPost("Register")]
@@ -33,15 +37,23 @@ namespace Jade.Controllers
                 return BadRequest(ModelState);
 
             var result = await _userService.RegisterUser(model);
-            if (result.Succeeded)
-                return Ok("User registered successfully!");
-
-            foreach (var error in result.Errors)
+            if (!result.Succeeded)
             {
-                ModelState.AddModelError("", error.Description);
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError("", error.Description);
+                }
+                return BadRequest(ModelState);
             }
 
-            return BadRequest(ModelState);
+            // Assign default role
+            var user = await _userManager.FindByNameAsync(model.Username);
+            if (user != null)
+            {
+                await _userManager.AddToRoleAsync(user, "User"); // Default role: User
+            }
+
+            return Ok("User registered successfully with default role!");
         }
 
         [HttpPost("Login")]
@@ -66,20 +78,26 @@ namespace Jade.Controllers
         {
             var ipAddress = GetIpAddress();
 
+            // Retrieve the existing refresh token
             var existingToken = await _refreshTokenService.GetRefreshToken(model.RefreshToken);
 
+            // Check if the refresh token is valid
             if (existingToken == null || !existingToken.IsActive)
                 return Unauthorized("Invalid or expired refresh token.");
 
-            // Generate new refresh token and invalidate the old one
+            // Get the user associated with the token
             var user = existingToken.User;
-            var newRefreshToken = await _refreshTokenService.GenerateRefreshToken(user.Id, ipAddress);
 
+            // Invalidate the old refresh token and generate a new one
+            var newRefreshToken = await _refreshTokenService.GenerateRefreshToken(user.Id, ipAddress);
             await _refreshTokenService.InvalidateRefreshToken(existingToken, ipAddress, newRefreshToken.Token);
 
-            // Generate new access token
+            // Generate a new access token with updated roles
+            // In AuthController
             var newAccessToken = await _tokenService.CreateAccessToken(user);
 
+
+            // Return the new access and refresh tokens
             var tokenResponse = new TokenResponse
             {
                 AccessToken = newAccessToken,
@@ -88,6 +106,7 @@ namespace Jade.Controllers
 
             return Ok(tokenResponse);
         }
+
 
         [Authorize]
         [HttpPost("Logout")]
